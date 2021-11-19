@@ -65,7 +65,7 @@ def readCSV():
             word_count = len(tokenized_review) - punctuation_count
 
             # calculate sentiment of review
-            sentiment_score = sent_analyzer.polarity_scores("review")["compound"]
+            sentiment_score = sent_analyzer.polarity_scores(review)["compound"]
             
             row = [category,rating,label,review,clean_text,word_count,character_count,capital_letters_count,digit_count,punctuation_count,sentiment_score]
             appendCleanReview(row)
