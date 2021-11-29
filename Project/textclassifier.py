@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import pickle
 import sklearn
+import io
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
@@ -11,7 +12,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import plot_confusion_matrix, confusion_matrix, classification_report
 from sklearn.metrics import accuracy_score, roc_curve, auc, precision_score, recall_score
@@ -19,7 +19,7 @@ from sklearn.metrics import accuracy_score, roc_curve, auc, precision_score, rec
 def main():
 
     st.sidebar.title("Text classification")
-    st.title("Classify genuine and fake reviews")
+    st.title("Text classification")
 
     def add_radiobutton():
 
@@ -29,13 +29,12 @@ def main():
 
         classifier = classifier_list[my_button]
         model_name = options[my_button]
-        st.subheader(model_name)
 
         return classifier, model_name
 
     def preprocess_data():
 
-        features_df = pd.read_csv("features.csv")
+        features_df = pd.read_csv("https://raw.githubusercontent.com/gdeb2/CourseProject/main/Project/features.csv")
         feature_names = ['rating', 'capital_ratio', 'digit_ratio', 'punctuation_ratio', 'word_count', 'character_count', 'capital_letters_count', 'digit_count', 'punctuation_count' , 'sentiment_score']
         X = features_df[feature_names]
         y = features_df['label']
@@ -59,7 +58,6 @@ def main():
         st.write("Recall: ", recall_score(y_test, prediction).round(2))
 
         return model, probs
-
 
     def confusion_matrixes(model, model_name):
 
@@ -86,17 +84,82 @@ def main():
         axs.set_title(model)
         axs.set_ylabel('True Positive Rate')
         axs.set_xlabel('False Positive Rate')
-        st.subheader("AUC and ROC Curve")
+        st.subheader("AUC-ROC Curve")
         st.pyplot(fig)
 
-    classifier, model_name = add_radiobutton()
-    X_train, X_test, y_train, y_test = preprocess_data()
+    def bar_plot(s):
+        st.write("---------------------------------- \n")
+        st.text(s)
+        fig, ax = plt.subplots(nrows=1, ncols=1)
+        s.plot(kind='bar', ax=ax)
+        st.pyplot(fig)
 
-    if st.sidebar.button('Classify'):
-        train_model, probs = load_up_classifier(classifier, X_train, X_test, y_train, y_test)
-        confusion_matrixes(model = train_model, model_name = model_name)
-        #Generate AUC (Area Under The Curve)- ROC (Receiver Operating Characteristics) curve
-        generate_all_curves(model = train_model, probs = probs)
+
+    def exploratory_data_analysis():
+
+        path = "https://raw.githubusercontent.com/gdeb2/CourseProject/main/Project/cleanReviews.csv"
+        df = pd.read_csv(path)
+
+        lb = "---------------------------------- \n"
+        st.write("\n First 5 rows of the dataset",df.head())
+        st.write(lb, "Descriptive statistics", df.describe(include = "all"))
+
+        st.write(lb, "Dataset info")
+        buffer = io.StringIO()
+        df.info(buf=buffer)
+        st.text(buffer.getvalue())
+
+        st.write(lb, "Number of null values in each column ")
+        st.text(df.isna().sum())
+        st.write(lb, "Unique classifier")
+        st.text(df.label.unique())
+        st.write(lb,"Size of unique classifier")
+        st.text(df.label.unique().size)
+        st.write(lb,"Group dataset by column 'label'")
+        st.text(df.groupby(['label']).count())
+        st.write(lb,"Number of unique ratings")
+        st.text(df.rating.unique())
+        st.write(lb, "Group dataset by column 'rating'")
+        st.text(df.groupby(['rating']).count())
+        st.write(lb, "Number of unique catergories")
+        st.text(df.category.unique())
+        st.write(lb, "Group dataset by column 'category'")
+        st.text(df.groupby(['category']).count())
+
+        dataset_copy = df.copy()
+        st.write(lb, "Dataset overview",dataset_copy.describe())
+
+        dataset_copy = df.drop(columns=['rating','original_text','clean_text','word_count','character_count','capital_letters_count','digit_count','punctuation_count','sentiment_score'])
+        bar_plot(s = dataset_copy.groupby('label').count())
+        st.write("Bar chart showing data grouped by column 'label'")
+        dataset_copy = df.drop(columns=['category','original_text','clean_text','word_count','character_count','capital_letters_count','digit_count','punctuation_count','sentiment_score'])
+        bar_plot(s = dataset_copy.groupby('rating').count())
+        st.write("Bar chart showing data grouped by column 'rating'")
+        dataset_copy = df.drop(columns=['original_text','clean_text','word_count','character_count','capital_letters_count','digit_count','punctuation_count','sentiment_score'])
+        bar_plot(dataset_copy.groupby(['rating','label']).count())
+        st.write("Bar chart showing data grouped by columnns 'rating' and 'label'")
+        dataset_copy = df.drop(columns=['original_text','clean_text','word_count','character_count','capital_letters_count','digit_count','punctuation_count','sentiment_score'])
+        bar_plot(dataset_copy.groupby(['category','label']).count())
+        st.write("Bar chart showing data grouped by columns 'category' and 'label'")
+
+        st.write(lb, "Pairwise correlation of columns",df.corr())
+
+    #Navigation menu
+    sb = st.sidebar.selectbox('Select',('Home','Exploratory Data Analysis','Model'))
+    if(sb == 'Exploratory Data Analysis'):
+        st.header('Exploratory Data Analysis')
+        exploratory_data_analysis()
+    elif(sb == 'Model'):
+        st.header('Classify genuine and fake reviews')
+        classifier, model_name = add_radiobutton()
+        X_train, X_test, y_train, y_test = preprocess_data()
+
+        if st.sidebar.button('Classify'):
+            st.subheader(model_name)
+            train_model, probs = load_up_classifier(classifier, X_train, X_test, y_train, y_test)
+            confusion_matrixes(model = train_model, model_name = model_name)
+            #Generate AUC (Area Under The Curve)- ROC (Receiver Operating Characteristics) curve
+            generate_all_curves(model = train_model, probs = probs)
 
 if __name__ == '__main__':
     main()
