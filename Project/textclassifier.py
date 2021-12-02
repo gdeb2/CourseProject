@@ -145,21 +145,18 @@ def main():
         st.write(lb, "Pairwise correlation of columns",df.corr())
 
     #Navigation menu
-    sb = st.sidebar.selectbox('Select',('Home','Exploratory Data Analysis','Model'))
-    if(sb == 'Exploratory Data Analysis'):
+    classifier, model_name = add_radiobutton()
+    X_train, X_test, y_train, y_test = preprocess_data()
+
+    if st.sidebar.button('Classify'):
         st.header('Exploratory Data Analysis')
         exploratory_data_analysis()
-    elif(sb == 'Model'):
         st.header('Classify genuine and fake reviews')
-        classifier, model_name = add_radiobutton()
-        X_train, X_test, y_train, y_test = preprocess_data()
-
-        if st.sidebar.button('Classify'):
-            st.subheader(model_name)
-            train_model, probs = load_up_classifier(classifier, X_train, X_test, y_train, y_test)
-            confusion_matrixes(model = train_model, model_name = model_name)
-            #Generate AUC (Area Under The Curve)- ROC (Receiver Operating Characteristics) curve
-            generate_all_curves(model = train_model, probs = probs)
+        st.subheader(model_name)
+        train_model, probs = load_up_classifier(classifier, X_train, X_test, y_train, y_test)
+        confusion_matrixes(model = train_model, model_name = model_name)
+        #Generate AUC (Area Under The Curve)- ROC (Receiver Operating Characteristics) curve
+        generate_all_curves(model = train_model, probs = probs)
 
 if __name__ == '__main__':
     main()
