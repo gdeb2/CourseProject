@@ -119,7 +119,7 @@ def main():
         anomaly_score = model.decision_function(X_test)
         st.header("Anomaly detection")
         X_valid = (X_test[anomaly_prediction == 1])
-        st.write("Accuracy:", len(X_valid) / len(anomaly_prediction) * 100 , "%")
+        st.write("Accuracy:", round(len(X_valid) / len(anomaly_prediction) * 100,2) , "%")
         st.write(pd.DataFrame({'Outlier prediction':anomaly_prediction, 'Anomaly score':anomaly_score}))
 
     def exploratory_data_analysis():
