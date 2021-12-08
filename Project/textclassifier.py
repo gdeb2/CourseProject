@@ -58,6 +58,7 @@ def main():
         st.write("Accuracy ", model.score(X_test, y_test).round(2))
         st.write("Precision: ", precision_score(y_test, prediction).round(2))
         st.write("Recall: ", recall_score(y_test, prediction).round(2))
+        st.write("Classification results (Genuine : 0 , Fake : 1) ")
         st.write(pd.DataFrame({'Review classification ':prediction}))
 
         return model, probs
@@ -116,11 +117,13 @@ def main():
         model=IsolationForest(n_estimators=50, max_samples='auto', contamination=float(0.1),max_features=1.0)
         model = model.fit(X_train)
         anomaly_prediction = model.predict(X_test)
-        anomaly_score = model.decision_function(X_test)
         st.header("Anomaly detection")
         X_valid = (X_test[anomaly_prediction == 1])
-        st.write("Accuracy:", round(len(X_valid) / len(anomaly_prediction) * 100,2) , "%")
-        st.write(pd.DataFrame({'Outlier prediction':anomaly_prediction, 'Anomaly score':anomaly_score}))
+        st.write("Accuracy:", round(len(X_valid) / len(anomaly_prediction) ,2))
+        anomaly_prediction[anomaly_prediction == 1] = 0
+        anomaly_prediction[anomaly_prediction == -1] = 1
+        st.write("Prediction results (Outlier : 1 , Inlier : 0) ")
+        st.write(pd.DataFrame({'Anomaly prediction':anomaly_prediction}))
 
     def exploratory_data_analysis():
 
