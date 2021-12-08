@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
-import pickle
 import sklearn
 import io
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -15,6 +14,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import plot_confusion_matrix, confusion_matrix, classification_report
 from sklearn.metrics import accuracy_score, roc_curve, auc, precision_score, recall_score
+from sklearn.ensemble import IsolationForest
 
 def main():
 
@@ -32,6 +32,7 @@ def main():
 
         return classifier, model_name
 
+    @st.cache(persist=True)
     def preprocess_data():
 
         features_df = pd.read_csv("https://raw.githubusercontent.com/gdeb2/CourseProject/main/Project/features.csv")
@@ -46,16 +47,18 @@ def main():
 
         return X_train, X_test, y_train, y_test
 
-    def load_up_classifier(classifier, x_train, x_test, y_train, y_test):
+    def load_up_classifier(model_name, classifier, x_train, x_test, y_train, y_test):
 
+        st.header('Classify genuine and fake reviews')
+        st.subheader(model_name)
         model = classifier
         model = model.fit(x_train, y_train)
         prediction = model.predict(x_test)
         probs = model.predict_proba(x_test)
-
         st.write("Accuracy ", model.score(X_test, y_test).round(2))
         st.write("Precision: ", precision_score(y_test, prediction).round(2))
         st.write("Recall: ", recall_score(y_test, prediction).round(2))
+        st.write(pd.DataFrame({'Review classification ':prediction}))
 
         return model, probs
 
@@ -88,14 +91,40 @@ def main():
         st.pyplot(fig)
 
     def bar_plot(s):
+
         st.write("---------------------------------- \n")
         st.text(s)
         fig, ax = plt.subplots(nrows=1, ncols=1)
         s.plot(kind='bar', ax=ax)
         st.pyplot(fig)
 
+    @st.cache(persist=True)
+    def split_data():
+
+        X = pd.read_csv("https://raw.githubusercontent.com/gdeb2/CourseProject/main/Project/cleanReviews.csv")
+        label = LabelEncoder()
+        for col in X.columns:
+            X[col] = label.fit_transform(X[col])
+        X_train, X_test = train_test_split(X, random_state=0)
+        return X_train, X_test
+
+    def anomaly_detection():
+
+        #Split train and test data for anomaly detection
+        X_train, X_test = split_data()
+        #Fit and predict model
+        model=IsolationForest(n_estimators=50, max_samples='auto', contamination=float(0.1),max_features=1.0)
+        model = model.fit(X_train)
+        anomaly_prediction = model.predict(X_test)
+        anomaly_score = model.decision_function(X_test)
+        st.header("Anomaly detection")
+        X_valid = (X_test[anomaly_prediction == 1])
+        st.write("Accuracy:", len(X_valid) / len(anomaly_prediction) * 100 , "%")
+        st.write(pd.DataFrame({'Outlier prediction':anomaly_prediction, 'Anomaly score':anomaly_score}))
 
     def exploratory_data_analysis():
+
+        st.header('Exploratory Data Analysis')
 
         path = "https://raw.githubusercontent.com/gdeb2/CourseProject/main/Project/cleanReviews.csv"
         df = pd.read_csv(path)
@@ -146,17 +175,20 @@ def main():
 
     #Navigation menu
     classifier, model_name = add_radiobutton()
+    #Split train and test data
     X_train, X_test, y_train, y_test = preprocess_data()
 
     if st.sidebar.button('Classify'):
-        st.header('Exploratory Data Analysis')
+        #Exploratory data analysis
         exploratory_data_analysis()
-        st.header('Classify genuine and fake reviews')
-        st.subheader(model_name)
-        train_model, probs = load_up_classifier(classifier, X_train, X_test, y_train, y_test)
+        #Model analysis
+        train_model, probs = load_up_classifier(model_name, classifier, X_train, X_test, y_train, y_test)
+        #Confusion matrix
         confusion_matrixes(model = train_model, model_name = model_name)
         #Generate AUC (Area Under The Curve)- ROC (Receiver Operating Characteristics) curve
         generate_all_curves(model = train_model, probs = probs)
+        #Anomaly detection
+        anomaly_detection()
 
 if __name__ == '__main__':
     main()
