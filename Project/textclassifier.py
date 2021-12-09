@@ -123,6 +123,7 @@ def main():
         st.write("Number of outliers:", len(X_outliers))
         st.write("Number of inliners", len(X_valid))
         st.write("Accuracy:", round(len(X_valid) / len(anomaly_prediction) ,2))
+        st.text("Count based on Training split 75% and Test split 25%")
 
     def exploratory_data_analysis():
 
