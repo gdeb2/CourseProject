@@ -123,7 +123,7 @@ def main():
         st.write("Number of outliers:", len(X_outliers))
         st.write("Number of inliners", len(X_valid))
         st.write("Accuracy:", round(len(X_valid) / len(anomaly_prediction) ,2))
-        st.text("Count based on Training split 75% and Test split 25%")
+        st.text("(Note: Count based on Training split 75% and Test split 25%)")
 
     def exploratory_data_analysis():
 
@@ -153,7 +153,7 @@ def main():
         st.text(df.rating.unique())
         st.write(lb, "Group dataset by column 'rating'")
         st.text(df.groupby(['rating']).count())
-        st.write(lb, "Number of unique catergories")
+        st.write(lb, "Number of unique categories")
         st.text(df.category.unique())
         st.write(lb, "Group dataset by column 'category'")
         st.text(df.groupby(['category']).count())
