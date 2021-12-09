@@ -58,8 +58,6 @@ def main():
         st.write("Accuracy ", model.score(X_test, y_test).round(2))
         st.write("Precision: ", precision_score(y_test, prediction).round(2))
         st.write("Recall: ", recall_score(y_test, prediction).round(2))
-        st.write("Classification results (Genuine : 0 , Fake : 1) ")
-        st.write(pd.DataFrame({'Review classification ':prediction}))
 
         return model, probs
 
@@ -118,12 +116,13 @@ def main():
         model = model.fit(X_train)
         anomaly_prediction = model.predict(X_test)
         st.header("Anomaly detection")
-        X_valid = (X_test[anomaly_prediction == 1])
+
+        X_outliers = anomaly_prediction[anomaly_prediction == -1]
+        X_valid = anomaly_prediction[anomaly_prediction == 1]
+
+        st.write("Number of outliers:", len(X_outliers))
+        st.write("Number of inliners", len(X_valid))
         st.write("Accuracy:", round(len(X_valid) / len(anomaly_prediction) ,2))
-        anomaly_prediction[anomaly_prediction == 1] = 0
-        anomaly_prediction[anomaly_prediction == -1] = 1
-        st.write("Prediction results (Outlier : 1 , Inlier : 0) ")
-        st.write(pd.DataFrame({'Anomaly prediction':anomaly_prediction}))
 
     def exploratory_data_analysis():
 
